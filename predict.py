@@ -40,17 +40,28 @@ def get_data_and_features(ticker, start_date, end_date):
             new_cols.append(str(col).lower())
     data.columns = new_cols
 
-    # Feature Engineering
-    print("[INFO] Engineering features (RSI, MACD, EMAs)...")
+    # --- Feature Engineering ---
+    # Calculate daily return first as it's needed for other features
+    data['daily_return'] = data['close'].pct_change()
+
+    # Short-term indicators
+    print("[INFO] Engineering short-term features (RSI, MACD, EMAs)...")
     data.ta.rsi(length=14, append=True)
     data.ta.macd(fast=12, slow=26, signal=9, append=True)
     data.ta.ema(length=50, append=True)
     data.ta.ema(length=200, append=True)
 
-    # --- FINAL FIX for Case-Sensitivity ---
-    # This ensures all columns, including those added by pandas_ta, are lowercase.
+    # --- FIX: Standardize column names to lowercase BEFORE using them ---
     data.columns = [col.lower() for col in data.columns]
-    # --- END FIX ---
+
+    # --- NEW: Long-Term Indicators ---
+    print("[INFO] Engineering long-term features...")
+    # Yearly momentum
+    data['feat_yearly_return'] = data['close'].pct_change(252)
+    # Yearly volatility
+    data['feat_volatility_yearly'] = data['daily_return'].rolling(window=252).std() * np.sqrt(252)
+    # Distance from long-term average (as a percentage)
+    data['feat_dist_from_ema200'] = (data['close'] - data['ema_200']) / data['ema_200']
 
     return data
 
@@ -61,42 +72,59 @@ def predict_stock_direction(ticker, duration):
 
     Args:
         ticker (str): The stock ticker symbol.
-        duration (str): 'day', 'week', or 'month'.
+        duration (str): 'day', 'week', 'month', or 'year'.
     """
     try:
         # --- 1. Setup Prediction Horizon ---
-        duration_map = {'day': 1, 'week': 5, 'month': 21}  # Trading days
+        duration_map = {'day': 1, 'week': 5, 'month': 21, 'year': 252}
         horizon = duration_map.get(duration, 1)
 
-        # Download data up to today
-        start_date = '2020-01-01'
+        start_date = '2015-01-01'
         end_date = date.today()
 
         data = get_data_and_features(ticker, start_date, end_date)
         if data is None:
             return
 
-        # --- 2. Create the Target Variable based on Duration ---
+        # --- 2. Create the Target Variable ---
         data['target'] = (data['close'].shift(-horizon) > data['close']).astype(int)
 
-        # Remove rows with NaN values
         data.dropna(inplace=True)
 
-        prediction_date = data.index[-1]
+        if data.empty:
+            print("[ERROR] Not enough data after feature creation. Try an earlier start date.")
+            return
 
         # --- 3. Train the Model ---
-        features = ['open', 'high', 'low', 'close', 'volume',
-                    'rsi_14', 'macd_12_26_9', 'ema_50', 'ema_200']
+        # Updated feature list to include new long-term indicators
+        features = [
+            'open', 'high', 'low', 'close', 'volume',
+            'rsi_14', 'macd_12_26_9', 'ema_50', 'ema_200',
+            'feat_yearly_return', 'feat_volatility_yearly', 'feat_dist_from_ema200'
+        ]
+
+        # Ensure all features exist in the dataframe
+        features = [f for f in features if f in data.columns]
 
         X = data[features]
         y = data['target']
 
-        # Use the last row for prediction and everything else for training
         X_train, y_train = X.iloc[:-1], y.iloc[:-1]
         X_predict = X.iloc[-1].values.reshape(1, -1)
 
         print(f"[INFO] Training model on {len(X_train)} data points...")
-        model = RandomForestClassifier(n_estimators=100, min_samples_split=50, random_state=42, n_jobs=-1)
+
+        # Increased bias to make model more "optimistic"
+        up_bias_ratio = 2.0
+        custom_class_weight = {0: 1, 1: up_bias_ratio}
+
+        model = RandomForestClassifier(
+            n_estimators=100,
+            min_samples_split=50,
+            random_state=42,
+            class_weight=custom_class_weight,
+            n_jobs=-1
+        )
         model.fit(X_train, y_train)
         print("[INFO] Model training complete.")
 
@@ -108,8 +136,8 @@ def predict_stock_direction(ticker, duration):
         confidence = prediction_proba[0][prediction[0]]
 
         print("\n" + "=" * 60)
-        print(f"PREDICTION FOR {ticker.upper()} OVER THE NEXT {duration.upper()} ")
-        print(f"   (Based on data up to {prediction_date.strftime('%Y-%m-%d')})")
+        print(f"PREDICTION FOR {ticker.upper()} OVER THE NEXT {duration.upper()}")
+        print(f"   (Prediction generated on: {end_date.strftime('%Y-%m-%d')})")
         print("-" * 60)
         print(f"The model predicts the price will go {direction} with {confidence:.2%} confidence.")
         print("=" * 60)
@@ -138,11 +166,12 @@ if __name__ == "__main__":
         '--duration',
         type=str,
         default='day',
-        choices=['day', 'week', 'month'],
+        choices=['day', 'week', 'month', 'year'],
         help="The prediction duration.\n"
              " 'day':   Predict direction for the next trading day.\n"
              " 'week':  Predict direction over the next 5 trading days.\n"
-             " 'month': Predict direction over the next 21 trading days."
+             " 'month': Predict direction over the next 21 trading days.\n"
+             " 'year':  Predict direction over the next 252 trading days."
     )
 
     args = parser.parse_args()
