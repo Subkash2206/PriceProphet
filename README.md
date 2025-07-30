@@ -1,107 +1,71 @@
-# PriceProphet
+# 🔮 PriceProphet: A Stock Direction Prediction Tool
 
-PriceProphet
+PriceProphet is a command-line tool that uses machine learning to forecast the future direction of a stock's price. By analyzing historical data and a blend of technical indicators, it provides a data-driven signal on whether a stock is likely to move **UP** or **DOWN** over a specified period.
 
-PriceProphet is a stock price direction prediction tool currently using a Random Forest Classifier trained on historical stock data and engineered features. It predicts whether a stock’s price will go up or down for a short timeframe (currently fixed to 1 day, with plans for more).
-About PriceProphet
+This project is built for learning, experimenting, and as a starting point for more complex quantitative analysis.
 
-PriceProphet aims to provide a data-driven signal on the directional movement of stocks using machine learning. The project is in an early development stage — the model currently predicts one-day price direction with moderate accuracy (~53%) using basic features like moving averages and lagged returns. This is a proof-of-concept and not financial advice.
-Features (Current)
+---
 
-  - Predicts short-term (1 day) stock price movement direction.
+## ✨ Features
 
-  - Uses Random Forest Classifier on engineered features including:
+* **Powerful CLI:** Run predictions and specify parameters directly from your terminal.
+* **Flexible Timeframes:** Predict price direction for the next **day, week, month,** or **year**.
+* **Adjustable Prediction Bias:** Fine-tune the model's "optimism" by adjusting the `up_bias_ratio` to make it more or less likely to predict an UP signal.
+* **Automated Feature Engineering:** Automatically calculates and uses a mix of indicators:
+    * **Short-Term Momentum:** RSI (Relative Strength Index), MACD, and EMAs (50 & 200-day).
+    * **Long-Term Momentum:** Yearly Return, Yearly Volatility, and the stock's price distance from its 200-day EMA.
+* **Dynamic Data:** Fetches the most up-to-date daily stock data from Yahoo Finance (`yfinance`) every time it runs.
 
-  - 50-day and 200-day EMAs
+---
 
-  - Lagged returns
+## 🚀 Getting Started
 
-  - EMA differences
+### Installation
 
-  - Data fetched via Yahoo Finance (yfinance).
+1.  **Clone this repository:**
+    ```bash
+    git clone [https://github.com/Subkash2206/PriceProphet.git](https://github.com/Subkash2206/PriceProphet.git)
+    cd PriceProphet
+    ```
 
-  - Basic CLI interface (future argparse support planned).
+2.  **(Recommended) Create and activate a virtual environment:**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
 
-Installation
+3.  **Create your `requirements.txt` file:**
+    To ensure you have the exact libraries needed, create a file named `requirements.txt` with the following content:
+    ```
+    pandas
+    numpy
+    yfinance
+    pandas-ta
+    scikit-learn
+    setuptools
+    ```
 
-Clone this repo:
-
-```bash
-git clone git@github.com:Subkash2206/PriceProphet.git
-cd PriceProphet
-```
-
-(Optional) Create and activate a virtual environment:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
+4.  **Install the required libraries:**
+    ```bash
     pip install -r requirements.txt
-```
+    ```
 
-This predicts whether the stock price will rise or fall the next day.
+### Usage
 
-How It Works
+Run the tool from your terminal. The `--ticker` argument is required.
 
-   - Downloads historical stock data from Yahoo Finance.
-
-   - Extracts features like EMAs and returns.
-
-   - Labels data with the next day’s price movement direction (up/down).
-
-   - Trains a Random Forest Classifier on this data.
-
-   - Predicts direction for the next day.
-
-Data Sources
-
-  - Historical price and volume data via the yfinance Python library.
-
-Model Details
-
-   - Algorithm: Random Forest Classifier
-
-   - Features: EMAs, lagged returns, EMA differences
-
-   - Training: Supervised learning on labeled historical data
-
-  - Current accuracy: ~53% (slightly better than random guessing)
-
-Limitations & Disclaimer
-
-  - The model is a basic prototype and should not be used for real financial decisions.
-
-  - Accuracy is modest; predictions are probabilistic signals, not guarantees.
-
-  - Market conditions and external factors are not modeled.
-
-  - Always do your own research before acting on predictions.
-
-Roadmap
-
-  - Add argparse for flexible CLI input (ticker, timeframe, model choice)
-
-  - Extend prediction horizon beyond 1 day
-
-  - Experiment with more advanced models (XGBoost, LSTM)
-
-  - Add backtesting and evaluation tools
-
-  - Build a user-friendly interface/dashboard
-
-
-Contributions and suggestions are welcome. Feel free to fork and open pull requests.
-License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-Contact
-
-Created by Subhash Kashyap
+* **Predict the next day for Apple:**
+    ```bash
+    python predict.py --ticker AAPL
+    ```
+* **Predict the next week for Google:**
+    ```bash
+    python predict.py --ticker GOOG --duration week
+    ```
+* **Predict the next year for Tesla:**
+    ```bash
+    python predict.py --ticker TSLA --duration year
+    ```
 
 
 
