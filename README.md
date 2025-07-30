@@ -1,4 +1,4 @@
-# 🔮 PriceProphet: A Stock Direction Prediction Tool
+#  PriceProphet: A Stock Direction Prediction Tool
 
 PriceProphet is a command-line tool that uses machine learning to forecast the future direction of a stock's price. By analyzing historical data and a blend of technical indicators, it provides a data-driven signal on whether a stock is likely to move **UP** or **DOWN** over a specified period.
 
@@ -6,7 +6,7 @@ This project is built for learning, experimenting, and as a starting point for m
 
 ---
 
-## ✨ Features
+##  Features
 
 * **Powerful CLI:** Run predictions and specify parameters directly from your terminal.
 * **Flexible Timeframes:** Predict price direction for the next **day, week, month,** or **year**.
@@ -18,7 +18,7 @@ This project is built for learning, experimenting, and as a starting point for m
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Installation
 
